@@ -54,12 +54,21 @@ def crossover(schedule1, schedule2):
 
 
 def mutate(schedule, all_programs, mutation_strength=0.1):
-    """Mutates one or more genes in a schedule."""
+    """Mutates multiple random genes."""
     schedule_copy = schedule.copy()
-    for _ in range(random.randint(1, 3)):  # mutate up to 3 genes
+    num_mutations = random.randint(1, 4)
+    for _ in range(num_mutations):
         mutation_point = random.randint(0, len(schedule_copy) - 1)
         schedule_copy[mutation_point] = random.choice(all_programs)
     return schedule_copy
+
+
+def add_random_noise_to_ratings(ratings_data, noise_strength=0.05):
+    """Adds small noise to ratings to force difference between trials."""
+    noisy_data = {}
+    for k, v in ratings_data.items():
+        noisy_data[k] = [max(0, min(5, x + random.uniform(-noise_strength, noise_strength))) for x in v]
+    return noisy_data
 
 
 def genetic_algorithm(ratings_data, all_programs, schedule_length,
@@ -108,14 +117,15 @@ st.title("📺 Genetic Algorithm — TV Program Scheduling Optimizer")
 
 st.info("""
 🧾 **Instructions**
-1. Place your file named **`program_ratings (2).csv`** in the same folder.
-2. Each row = Program name + 18 rating values (6:00–23:00).
-3. Press **Run All 3 Trials** to view results.
+1. Ensure your CSV file is named **`program_ratings (2).csv`**.
+2. Place it in the **same folder** as this app.
+3. Each row = Program name + 18 rating values (6:00–23:00).
+4. Run all 3 trials to compare.
 """)
 
 file_path = 'program_ratings (2).csv'
 if not os.path.exists(file_path):
-    st.error("❌ File not found! Please upload or check name.")
+    st.error("❌ File not found! Please check filename.")
 else:
     ratings = read_csv_to_dict(file_path)
     df = pd.read_csv(file_path)
@@ -127,21 +137,26 @@ else:
         all_time_slots = list(range(6, 24))
         SCHEDULE_LENGTH = len(all_time_slots)
 
-        # Distinct rates for better variation
+        # Different parameters for each trial
         trials = [
-            ("Trial 1", 0.9, 0.5, 10),
-            ("Trial 2", 0.6, 0.7, 20),
-            ("Trial 3", 0.8, 0.9, 30),
+            ("Trial 1", 0.9, 0.3, 0.02, 10),
+            ("Trial 2", 0.7, 0.5, 0.05, 20),
+            ("Trial 3", 0.5, 0.8, 0.08, 30),
         ]
 
         if st.button("🚀 Run All 3 Trials"):
-            for label, co, mu, seed in trials:
+            for label, co, mu, noise, seed in trials:
                 st.header(f"🔹 {label}")
                 st.write(f"**Crossover Rate:** {co} | **Mutation Rate:** {mu}")
+
                 random.seed(seed)
                 np.random.seed(seed)
+
+                # Add trial-specific random noise to dataset
+                noisy_ratings = add_random_noise_to_ratings(ratings, noise_strength=noise)
+
                 schedule, fitness = genetic_algorithm(
-                    ratings, all_programs, SCHEDULE_LENGTH,
+                    noisy_ratings, all_programs, SCHEDULE_LENGTH,
                     crossover_rate=co, mutation_rate=mu
                 )
 
