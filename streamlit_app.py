@@ -53,11 +53,12 @@ def crossover(schedule1, schedule2):
     return child1, child2
 
 
-def mutate(schedule, all_programs):
-    """Mutates one random gene in a schedule."""
+def mutate(schedule, all_programs, mutation_strength=0.1):
+    """Mutates one or more genes in a schedule."""
     schedule_copy = schedule.copy()
-    mutation_point = random.randint(0, len(schedule_copy) - 1)
-    schedule_copy[mutation_point] = random.choice(all_programs)
+    for _ in range(random.randint(1, 3)):  # mutate up to 3 genes
+        mutation_point = random.randint(0, len(schedule_copy) - 1)
+        schedule_copy[mutation_point] = random.choice(all_programs)
     return schedule_copy
 
 
@@ -105,18 +106,16 @@ def genetic_algorithm(ratings_data, all_programs, schedule_length,
 
 st.title("📺 Genetic Algorithm — TV Program Scheduling Optimizer")
 
-# File instruction
 st.info("""
 🧾 **Instructions**
-1. Make sure your CSV file is named **`program_ratings (2).csv`**
-2. Place it in the **same folder** as this app (`streamlit_app.py`)
-3. Each row = Program name, followed by 18 rating values (6:00–23:00)
+1. Place your file named **`program_ratings (2).csv`** in the same folder.
+2. Each row = Program name + 18 rating values (6:00–23:00).
+3. Press **Run All 3 Trials** to view results.
 """)
 
-# Load file
 file_path = 'program_ratings (2).csv'
 if not os.path.exists(file_path):
-    st.error("❌ CSV file not found! Please check the filename or upload it.")
+    st.error("❌ File not found! Please upload or check name.")
 else:
     ratings = read_csv_to_dict(file_path)
     df = pd.read_csv(file_path)
@@ -128,27 +127,14 @@ else:
         all_time_slots = list(range(6, 24))
         SCHEDULE_LENGTH = len(all_time_slots)
 
-        st.sidebar.header("🧬 Genetic Algorithm Parameters")
+        # Distinct rates for better variation
+        trials = [
+            ("Trial 1", 0.9, 0.5, 10),
+            ("Trial 2", 0.6, 0.7, 20),
+            ("Trial 3", 0.8, 0.9, 30),
+        ]
 
-        # Trial 1
-        st.sidebar.subheader("Trial 1")
-        co_r_1, mut_r_1 = 0.8, 0.3
-
-        # Trial 2
-        st.sidebar.subheader("Trial 2")
-        co_r_2, mut_r_2 = 0.6, 0.4
-
-        # Trial 3
-        st.sidebar.subheader("Trial 3")
-        co_r_3, mut_r_3 = 0.9, 0.2
-
-        if st.sidebar.button("🚀 Run All 3 Trials"):
-            trials = [
-                ("Trial 1", co_r_1, mut_r_1, 10),
-                ("Trial 2", co_r_2, mut_r_2, 20),
-                ("Trial 3", co_r_3, mut_r_3, 30),
-            ]
-
+        if st.button("🚀 Run All 3 Trials"):
             for label, co, mu, seed in trials:
                 st.header(f"🔹 {label}")
                 st.write(f"**Crossover Rate:** {co} | **Mutation Rate:** {mu}")
@@ -169,4 +155,3 @@ else:
                 st.markdown("---")
     else:
         st.error("⚠️ Could not load program ratings properly.")
-
